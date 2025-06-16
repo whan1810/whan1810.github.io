@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tracking Link Generator & Visitor Location Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Material+Icons" rel="stylesheet" />
+    <style>
+        /* Reset and base */
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);
+            color: #e0e6f0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        a {
+            color: #82aaff;
+            text-decoration: none;
+        }
+        a:hover, a:focus {
+            text-decoration: underline;
+        }
+        main {
+            flex: 1 0 auto;
+            max-width: 960px;
+            margin: 40px auto 80px;
+            padding: 0 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 48px;
+        }
+        h1 {
+            font-weight: 600;
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            color: #ffffff;
+            text-align: center;
+            user-select: none;
+        }
+        p.description {
+            max-width: 600px;
+            color: #b0b8d4;
+            font-size: 1.1rem;
+            margin: 0 auto 32px;
+            text-align: center;
+            user-select: none;
+        }
+        form#createLinkForm {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            justify-content: center;
+            align-items: center;
+            user-select: none;
+        }
+        input[type="text"] {
+            background: #263859;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 20px;
+            font-size: 1rem;
+            color: #e0e6f0;
+            flex: 1 1 300px;
+            transition: box-shadow 0.3s;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            box-shadow: 0 0 8px #82aaff;
+            background: #364a7e;
+        }
+        button#createLinkBtn {
+            background: #82aaff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 28px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #1a2238;
+            cursor: pointer;
+            flex: 0 0 auto;
+            transition: background-color 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            user-select: none;
+        }
+        button#createLinkBtn:hover,
+        button#createLinkBtn:focus {
+            background: #a3bdff;
+            outline: none;
+        }
+        .material-icons {
+            font-variation-settings: 'wght' 600;
+        }
+
+        section.trackings {
+            background: rgba(38, 56, 89, 0.4);
+            border-radius: 16px;
+            padding: 24px;
+            max-height: 480px;
+            overflow-y: auto;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        section.trackings h2 {
+            margin-top: 0;
+            font-weight: 600;
+            font-size: 1.8rem;
+            margin-bottom: 16px;
+            color: #ffffff;
+            user-select: none;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            user-select: text;
+        }
+        thead {
+            background: #1a264f;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 1px solid #394b7e;
+        }
+        th {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #aab8ff;
+            position: sticky;
+            top: 0;
+            backdrop-filter: blur(10px);
+            z-index: 1;
+        }
+        tr:hover {
+            background: rgba(130, 170, 255, 0.15);
+        }
+        td.url-cell a {
+            max-width: 280px;
+            display: inline-block;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #82aaff;
+        }
+        td.location-cell {
+            max-width: 180px;
+        }
+        td.timestamp-cell {
+            max-width: 160px;
+            font-size: 0.9rem;
+            color: #bbc6f8;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            main {
+                margin: 24px 16px 80px;
+                padding: 0 12px;
+            }
+            table th, table td {
+                padding: 8px 10px;
+                font-size: 0.85rem;
+            }
+            input[type="text"] {
+                flex-basis: 100%;
+            }
+            button#createLinkBtn {
+                flex-basis: 100%;
+                justify-content: center;
+            }
+            td.url-cell a {
+                max-width: 200px;
+            }
+            td.location-cell {
+                max-width: 120px;
+            }
+        }
+        footer {
+            background: #14213d;
+            color: #7180a5;
+            text-align: center;
+            padding: 16px 12px;
+            user-select: none;
+            flex-shrink: 0;
+        }
+        footer a {
+            color: #82aaff;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Notification */
+        #notify {
+            position: fixed;
+            bottom: 96px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #82aaffdd;
+            color: #1a2238;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            box-shadow: 0 8px 20px rgba(130, 170, 255, 0.3);
+            user-select: none;
+            z-index: 2000;
+        }
+        #notify.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>Tracking Link Generator</h1>
+        <p class="description">Create unique tracking links that log visitor location info when opened.</p>
+        <form id="createLinkForm" aria-label="Create Tracking Link Form">
+            <input
+                type="text"
+                id="trackingLabel"
+                name="trackingLabel"
+                placeholder="Enter a label (e.g. Newsletter, Campaign1)"
+                aria-label="Tracking label"
+                required
+                autocomplete="off"
+                maxlength="40"
+            />
+            <button type="submit" aria-label="Generate Tracking Link" id="createLinkBtn">
+                <span class="material-icons" aria-hidden="true">link</span> Generate Link
+            </button>
+        </form>
+
+        <section class="trackings" aria-live="polite" aria-relevant="additions">
+            <h2>Tracking Links & Visits</h2>
+            <table aria-describedby="trackingDescription" role="grid">
+                <caption id="trackingDescription" style="text-align:left; padding:0 0 8px 0;">List of tracking links and visit logs with visitor locations.</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Label</th>
+                        <th scope="col">Tracking Link</th>
+                        <th scope="col">Visits</th>
+                    </tr>
+                </thead>
+                <tbody id="trackingTableBody">
+                    <!-- Filled dynamically -->
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <footer>
+        &copy; 2024 Tracking Links & Visitor Location Tracker. Created with modern web standards.
+    </footer>
+
+    <div id="notify" role="alert"></div>
+
+    <script>
+        'use strict';
+
+        // Utilities
+        const SERVICE_ORIGIN = window.location.origin;
+        const notifyEl = document.getElementById('notify');
+
+        /** Show temporary notification */
+        function showNotification(msg, duration = 3000) {
+            notifyEl.textContent = msg;
+            notifyEl.classList.add('show');
+            setTimeout(() => {
+                notifyEl.classList.remove('show');
+            }, duration);
+        }
+
+        /** Generate a simple unique ID */
+        function generateId(length = 8) {
+            const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+            let id = '';
+            for (let i = 0; i < length; i++) {
+                id += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return id;
+        }
+
+        /** Get stored tracking data from localStorage */
+        function getStoredData() {
+            try {
+                const raw = localStorage.getItem('trackingLinksData');
+                if (!raw) return { links: {} };
+                return JSON.parse(raw);
+            } catch {
+                localStorage.removeItem('trackingLinksData');
+                return { links: {} };
+            }
+        }
+
+        /** Save tracking data to localStorage */
+        function saveStoredData(data) {
+            localStorage.setItem('trackingLinksData', JSON.stringify(data));
+        }
+
+        /** Build the tracking URL from ID */
+        function buildTrackingUrl(id) {
+            return \`\${SERVICE_ORIGIN}\${window.location.pathname}?track=\${id}\`;
+        }
+
+        /** Render the tracking links table */
+        function renderTrackingTable(data) {
+            const tbody = document.getElementById('trackingTableBody');
+            tbody.innerHTML = ''; // Clear previous
+
+            const links = data.links || {};
+            const sortedKeys = Object.keys(links).sort((a,b) => {
+                const aCount = links[a].visits.length;
+                const bCount = links[b].visits.length;
+                return bCount - aCount;
+            });
+
+            if (sortedKeys.length === 0) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td');
+                td.colSpan = 3;
+                td.style.textAlign = 'center';
+                td.textContent = 'No tracking links created yet.';
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+                return;
+            }
+
+            sortedKeys.forEach(id => {
+                const linkData = links[id];
+                const tr = document.createElement('tr');
+
+                // Label
+                const labelTd = document.createElement('td');
+                labelTd.textContent = linkData.label;
+                labelTd.title = linkData.label;
+                labelTd.style.userSelect = 'text';
+                tr.appendChild(labelTd);
+
+                // Tracking URL
+                const urlTd = document.createElement('td');
+                urlTd.className = 'url-cell';
+                const a = document.createElement('a');
+                a.href = buildTrackingUrl(id);
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                a.textContent = buildTrackingUrl(id);
+                urlTd.appendChild(a);
+                tr.appendChild(urlTd);
+
+                // Visits count with clickable icon to toggle expanded detail
+                const visitsTd = document.createElement('td');
+                visitsTd.style.userSelect = 'none';
+                const btn = document.createElement('button');
+                btn.textContent = linkData.visits.length + ' visit' + (linkData.visits.length !== 1 ? 's' : '');
+                btn.setAttribute('aria-expanded', 'false');
+                btn.className = 'material-icons';
+                btn.style.fontWeight = '600';
+                btn.style.cursor = 'pointer';
+                btn.style.background = 'none';
+                btn.style.border = 'none';
+                btn.style.padding = '0 6px 0 0';
+                btn.style.color = '#82aaff';
+                btn.addEventListener('click', () => {
+                    const expanded = btn.getAttribute('aria-expanded') === 'true';
+                    btn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+                    if (expanded) {
+                        const details = tr.querySelector('.visit-details');
+                        if (details) details.remove();
+                    } else {
+                        const details = createVisitDetails(linkData.visits);
+                        tr.appendChild(details);
+                    }
+                });
+
+                visitsTd.appendChild(btn);
+                tr.appendChild(visitsTd);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        /** Create visit details expandable row */
+        function createVisitDetails(visits) {
+            const tr = document.createElement('tr');
+            tr.className = 'visit-details';
+            const td = document.createElement('td');
+            td.colSpan = 3;
+            td.style.paddingTop = '0';
+            td.style.background = 'rgba(66, 89, 137, 0.5)';
+            td.style.borderTop = 'none';
+
+            if (visits.length === 0) {
+                td.textContent = 'No visits yet.';
+            } else {
+                const list = document.createElement('dl');
+                list.style.display = 'grid';
+                list.style.gridTemplateColumns = '1fr 1fr 1fr';
+                list.style.gap = '12px 24px';
+                list.style.maxHeight = '300px';
+                list.style.overflowY = 'auto';
+
+                visits.slice().reverse().forEach((visit, index) => {
+                    const dateDt = document.createElement('dt');
+                    dateDt.style.fontWeight = '600';
+                    dateDt.textContent = \`Visit #\${visits.length - index} Time:\`;
+                    const dateDd = document.createElement('dd');
+                    dateDd.textContent = new Date(visit.timestamp).toLocaleString();
+                    dateDd.style.margin = '0 0 8px 0';
+
+                    const locDt = document.createElement('dt');
+                    locDt.style.fontWeight = '600';
+                    locDt.textContent = 'Location:';
+                    const locDd = document.createElement('dd');
+                    locDd.textContent = visit.locationString || 'Unknown';
+                    locDd.style.margin = '0 0 8px 0';
+
+                    const ipDt = document.createElement('dt');
+                    ipDt.style.fontWeight = '600';
+                    ipDt.textContent = 'IP Address:';
+                    const ipDd = document.createElement('dd');
+                    ipDd.textContent = visit.ip || 'Unknown';
+                    ipDd.style.margin = '0 0 8px 0';
+
+                    // Append to list
+                    list.appendChild(dateDt);
+                    list.appendChild(dateDd);
+                    list.appendChild(locDt);
+                    list.appendChild(locDd);
+                    list.appendChild(ipDt);
+                    list.appendChild(ipDd);
+                });
+
+                td.appendChild(list);
+            }
+            tr.appendChild(td);
+            return tr;
+        }
+
+        /** Handle form submit to create tracking link */
+        document.getElementById('createLinkForm').addEventListener('submit', e => {
+            e.preventDefault();
+            const input = document.getElementById('trackingLabel');
+            const label = input.value.trim();
+            if (!label) {
+                alert('Please enter a label.');
+                return;
+            }
+
+            let data = getStoredData();
+            // Generate unique ID that does not exist yet
+            let id;
+            do {
+                id = generateId();
+            } while (data.links[id]);
+
+            // Save
+            data.links[id] = {
+                label,
+                visits: []
+            };
+            saveStoredData(data);
+            renderTrackingTable(data);
+            input.value = '';
+            showNotification('Tracking link created. You can share it now.');
+        });
+
+        /** Parse URL for query param track=ID to detect link visit */
+        function detectTrackingVisit() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const trackId = urlParams.get('track');
+            if (!trackId) return null;
+            const data = getStoredData();
+            if (!data.links[trackId]) return null;
+            return trackId;
+        }
+
+        /** Fetch visitor IP and location data from external API */
+        async function fetchVisitorInfo() {
+            try {
+                // Using free ipapi.co JSON API for IP lookup
+                const response = await fetch('https://ipapi.co/json/');
+                if (!response.ok) return null;
+                const json = await response.json();
+                return {
+                    ip: json.ip || 'Unknown',
+                    city: json.city || '',
+                    region: json.region || '',
+                    country: json.country_name || '',
+                    locationString: [json.city, json.region, json.country_name].filter(Boolean).join(', ')
+                };
+            } catch {
+                return null;
+            }
+        }
+
+        /** Register a visit for given tracking ID */
+        async function registerVisit(trackId) {
+            const data = getStoredData();
+            if (!data.links[trackId]) return;
+            const visitorInfo = await fetchVisitorInfo();
+            if (!visitorInfo) {
+                console.warn('Could not fetch visitor info.');
+            }
+            const visitRecord = {
+                timestamp: Date.now(),
+                ip: visitorInfo?.ip || 'Unknown',
+                city: visitorInfo?.city || '',
+                region: visitorInfo?.region || '',
+                country: visitorInfo?.country || '',
+                locationString: visitorInfo?.locationString || 'Unknown'
+            };
+            // Add visit to the tracking link
+            data.links[trackId].visits.push(visitRecord);
+            saveStoredData(data);
+            showNotification('Tracking link visited. Location logged.');
+
+            // Replace the URL to clean state (remove query param) to avoid duplicate registering on reload
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        /** Initialize app */
+        function init() {
+            const trackId = detectTrackingVisit();
+            if (trackId) {
+                registerVisit(trackId);
+            }
+            renderTrackingTable(getStoredData());
+        }
+
+        // Run app
+        init();
+    </script>
+</body>
+</html>
